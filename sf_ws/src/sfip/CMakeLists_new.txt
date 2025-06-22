@@ -1,0 +1,102 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(sfip)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules/" ${CMAKE_MODULE_PATH})
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  std_msgs
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
+  message_generation
+  cmake_modules
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+# Add message files
+add_message_files(
+  FILES
+  Estimate.msg
+  Knot.msg
+  Spline.msg
+)
+
+# Generate messages with dependencies
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
+
+find_package(Eigen3 REQUIRED)
+find_package(SuiteSparse REQUIRED MODULE)
+
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp std_msgs message_runtime tf2 tf2_ros tf2_geometry_msgs
+  DEPENDS EIGEN3
+)
+
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+  ${BOOST_INCLUDE_DIR}
+  ${SUITESPARSE_INCLUDE_DIRS}
+)
+
+# Core library files
+set(SFIP_CORE_SOURCES
+  src/sfip/SplineFusionCore.cpp
+  src/sfip/WindowManager.cpp
+  src/sfip/Optimizer.cpp
+  src/sfip/DataProcessor.cpp
+)
+
+# Build the library
+add_library(sfip_core ${SFIP_CORE_SOURCES})
+target_link_libraries(sfip_core ${catkin_LIBRARIES} cholmod)
+
+# Build the ROS adapter
+add_library(sfip_ros_adapter src/sfip/SplineFusionAdapter.cpp)
+target_link_libraries(sfip_ros_adapter sfip_core ${catkin_LIBRARIES})
+
+# Add the old executables for backward compatibility
+add_executable(EstimationInterface src/EstimationInterface.cpp)
+target_link_libraries(EstimationInterface ${catkin_LIBRARIES})
+
+add_executable(SplineFusion src/SplineFusion.cpp)
+target_link_libraries(SplineFusion ${catkin_LIBRARIES} cholmod)
+
+# Add the new executables
+add_executable(EstimationInterface_new src/EstimationInterface_new.cpp)
+target_link_libraries(EstimationInterface_new sfip_ros_adapter ${catkin_LIBRARIES})
+
+add_executable(SplineFusion_new src/SplineFusion_new.cpp)
+target_link_libraries(SplineFusion_new sfip_core ${catkin_LIBRARIES})
+
+# Add integration test executable
+add_executable(integration_test test/integration_test.cpp)
+target_link_libraries(integration_test ${catkin_LIBRARIES} cholmod)
+
+# Add standalone spline test (minimal ROS dependencies)
+add_executable(spline_test_standalone test/spline_test_standalone.cpp)
+target_link_libraries(spline_test_standalone ${catkin_LIBRARIES} cholmod)
+
+add_executable(simple_bell_test test/simple_bell_test.cpp)
+target_link_libraries(simple_bell_test ${catkin_LIBRARIES} cholmod)
+
+# Add debug flags
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -Wall -Wextra")
+set(CMAKE_BUILD_TYPE Debug)
+
+add_dependencies(SplineFusion ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(SplineFusion_new ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(EstimationInterface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(EstimationInterface_new ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(sfip_core ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(sfip_ros_adapter ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

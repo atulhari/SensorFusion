@@ -1,0 +1,22 @@
+<launch>
+    <!-- Load parameters from the YAML file -->
+    <rosparam command="load" file="$(find sfip)/config/params.yaml" />
+    <rosparam set="/use_sim_time" value="true"/>
+
+    <!-- SplineFusion Node -->
+    <node pkg="sfip" type="SplineFusion" name="spline_fusion_node" output="screen" clear_params="true">
+        <!-- Add any remappings for SplineFusion topics below if needed. -->
+        <!-- Example:
+        <remap from="/SplineFusion/est_window" to="/sf/state_estimate"/>
+        -->
+    </node>
+
+    <!-- EstimationInterface Node -->
+    <node pkg="sfip" type="EstimationInterface" name="estimation_interface_node" output="screen" clear_params="true">
+        <!-- Add any remappings for EstimationInterface topics below if needed. -->
+        <!-- Example:
+        <remap from="/imu/data" to="/my_robot/imu_raw"/>
+        <remap from="/EstimationInterface/imu_ds" to="/sf/input/imu_downsampled"/>
+        -->
+    </node>
+</launch> 

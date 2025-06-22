@@ -1,0 +1,72 @@
+# Parameters for the SplineFusion node
+# These will be loaded into the private namespace of 'spline_fusion_node'
+spline_fusion_node:
+  imu_sample_coeff: 1.0 # Processing factor for IMU. If 0.0, enables 'pose_only' mode.
+  max_iter: 20 # Maximum iterations for the optimizer per window.
+  control_point_fps: 60 # Frequency (Hz) for placing new spline control points (knots).
+  window_size: 10 # Number of active knots in the sliding optimization window.
+
+  # Inverse variances (1/sigma^2) and weights for IMU data
+  # Since we fixed the variance squaring bug, these can be more reasonable
+  # Scaled down further to prevent numerical issues
+  accel_var_inv: [10.0, 10.0, 10.0] # For accelerometer x, y, z (reduced from 100 to prevent scaling issues)
+  bias_accel_var_inv: [1.0, 1.0, 1.0] # For accelerometer bias x, y, z (reduced from 10)
+  w_accel: 1.0 # Overall weight for accelerometer residuals.
+  w_bias_accel: 1.0 # Overall weight for accelerometer bias residuals.
+
+  gyro_var_inv: [10.0, 10.0, 10.0] # For gyroscope x, y, z (reduced from 100 to prevent scaling issues)
+  bias_gyro_var_inv: [1.0, 1.0, 1.0] # For gyroscope bias x, y, z (reduced from 10)
+  w_gyro: 1.0 # Overall weight for gyroscope residuals.
+  w_bias_gyro: 1.0 # Overall weight for gyroscope bias residuals.
+
+  # Weights for external pose measurements (keep these relatively high for good anchoring)
+  w_pose_pos: 100.0 # Weight for external pose position component (reduced from 100 to balance with IMU)
+  w_pose_rot: 100.0 # Weight for external pose rotation component (reduced from 100 to balance with IMU)
+
+  # Initial damping parameters for Levenberg–Marquardt optimiser
+  initial_lambda: 1.0e-9 # Starting LM damping value (λ) - increased for stability.
+  initial_lambda_vee: 2.0 # Multiplicative factor by which λ is increased when a step is rejected.
+
+  # Initial gravity vector (g_w) for estimation.
+  # If IMU-based initialization is successful, it might override this.
+  if_opt_g: false # Disable gravity optimization for now to reduce complexity
+  gravity_initial: [0.0, 0.0, -9.80665]
+
+  # Robust kernel parameters for handling outliers
+  use_robust_kernel: true # Enable robust kernel (Huber) for IMU residuals to handle noise
+  robust_kernel_delta: 1.0 # Huber kernel threshold (larger = less robust, smaller = more robust)
+
+# Parameters for the EstimationInterface node
+# These will be loaded into the private namespace of 'estimation_interface_node'
+estimation_interface_node:
+  topic_imu: "/ouster/imu" # ROS topic for raw IMU messages.
+  topic_pose_input: "/kdlidar_ros/pose" # ROS topic for raw external pose messages (e.g., from motion capture).
+
+  imu_sample_coeff:
+    1.0 # Downsampling factor for IMU. 1.0 means no downsampling from subscribed topic.
+    # Affects rate of messages published to "/EstimationInterface/imu_ds".
+  pose_sample_coeff:
+    1.0 # Downsampling factor for Pose. 1.0 means no downsampling.
+    # Affects rate of messages published to "/EstimationInterface/pose_ds".
+
+  imu_frequency: 100.0 # Expected frequency (Hz) of incoming IMU data on 'topic_imu'. Used for downsampling logic.
+  pose_frequency: 20.0 # Expected frequency (Hz) of incoming pose data on 'topic_pose_input'. Used for downsampling.
+
+  output_visualization_fps: 60.0 # Target FPS for publishing the optimized spline path for visualization.
+
+  # Frame ids used for automatic TF-based extrinsic handling
+  imu_frame: "os_imu" # TF frame in which IMU reports its measurements (body frame for fusion)
+  platform_frame_id: "camera" # Platform/camera frame that pose measurements refer to
+  output_frame: "map" # Desired frame for publishing fused pose
+
+  # IMU data quality control
+  max_imu_time_gap_sec: 0.5 # Maximum allowed gap between consecutive IMU measurements (seconds)
+  max_pose_age_sec: 2.0 # Maximum age of pose measurements to accept (seconds)
+  imu_accel_max_norm: 50.0 # Maximum acceleration norm to accept (m/s^2)
+  imu_gyro_max_norm: 10.0 # Maximum gyroscope norm to accept (rad/s)
+
+  # Unit conversions for IMU data
+  gyro_unit: false # Gyroscope units: false for rad/s (ROS standard), true if input is in deg/s.
+  acc_ratio: false # Accelerometer units: false for m/s^2 (ROS standard), true if input needs scaling by 'g' (e.g. if input is in 'g's).
+
+  control_point_fps: 30 # Knot placement frequency (should match SplineFusion for consistency in dt_ns calculation if shared logic relies on it).

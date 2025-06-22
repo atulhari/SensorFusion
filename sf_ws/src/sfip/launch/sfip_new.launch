@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Load parameters -->
+    <rosparam command="load" file="$(find sfip)/config/params.yaml" />
+    
+    <!-- Start the new SplineFusion node -->
+    <node pkg="sfip" type="SplineFusion_new" name="spline_fusion_node" output="screen">
+    </node>
+    
+    <!-- Start the new EstimationInterface node -->
+    <node pkg="sfip" type="EstimationInterface_new" name="estimation_interface_node" output="screen">
+    </node>
+    
+    <!-- Start TF static publisher if needed -->
+    <!-- This is just an example, adjust as needed for your setup -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_imu" 
+          args="0 0 0 0 0 0 camera_link imu_link" />
+</launch>

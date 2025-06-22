@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>sfip</name>
+  <version>0.0.0</version>
+  
+  <description>SFIP: Spline Fusion package </description>
+  <license>GPLv3</license>
+  <maintainer email="atul@kudan.eu">Atul Hari</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <build_depend>ceres-solver</build_depend>
+  <exec_depend>ceres-solver</exec_depend>
+</package>
